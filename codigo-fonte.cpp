@@ -13,7 +13,7 @@ type f(valarray<type> x){ //calcula valor da funcao objetivo f(x)=x^2+(exp(x)-y)
        return pow(x[0],2)+pow(exp(x[0])-x[1],2);
 }
 
-valarray<double> df(valarray<double> x){ //computa vetor gradiente da funcao objetivo f(x)=x^2+(exp(x)-y)^2 no ponto x
+valarray<type> df(valarray<type> x){ //computa vetor gradiente da funcao objetivo f(x)=x^2+(exp(x)-y)^2 no ponto x
         type arr[2]={2*x[0]+2*(exp(x[0])-x[1])*exp(x[0]),2*(exp(x[0])-x[1])*(-1)};
         valarray<type> ret(arr,2);
         return ret;
