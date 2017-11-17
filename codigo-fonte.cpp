@@ -8,6 +8,7 @@ using namespace std;
 
 int iterBusca=0; //numero de iteracoes de bsuca (secao aurea ou Armijo)
 int iterMetodo=0; //numero de iteracoes do metodo de minimizacao (gradiente, Newton ou quase-Newton)
+bool convergiu=false; //verdadeiro se metodo foi executado e convergiu dentro do limite de iteracoes
 
 type f(valarray<type> x){ //calcula valor da funcao objetivo f(x)=x^2+(exp(x)-y)^2 no ponto x
        return pow(x[0],2)+pow(exp(x[0])-x[1],2);
@@ -47,14 +48,18 @@ type armijo(valarray<type> x, valarray<type> d, type gama=0.59, type n=0.4){ //b
 valarray<type> gradiente(valarray<type> x, bool usarArmijo=true, type tol=0.00001){ //metodo do gradiente
      valarray<type> nabda=df(x);
      valarray<type> x0(0.0,2);
-     while (pow(nabda[0],2)+pow(nabda[1],2)>pow(tol,2)&&(x0!=x)[0]&&(x0!=x)[1]&&iterMetodo<5000){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo e numero de iteracoes maximo (5000)
+     while (iterMetodo<5000){ //condicao de parada: numero de iteracoes maximo (5000)
            x0=x;
            if (usarArmijo)
-              x+=armijo(x,-nabda)*-nabda; //chamada a busca de Armijo
+               x+=armijo(x,-nabda)*-nabda; //chamada a busca de Armijo
            else
                x+=secaoAurea(x,-nabda)*-nabda;//chamada a busca por secao aurea
            nabda=df(x);
            iterMetodo++;
+           if (pow(nabda[0],2)+pow(nabda[1],2)<=pow(tol,2)||((x0==x)[0]&&(x0==x)[1])){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
+               convergiu=true;
+               break;
+           }
      }
      return x;
 }
@@ -66,7 +71,7 @@ valarray<type> newton(valarray<type> x, bool usarArmijo=true, type tol=0.00001){
      d[0]=-(invHessiana[0]*nabda[0]+invHessiana[1]*nabda[1]);
      d[1]=-(invHessiana[2]*nabda[0]+invHessiana[3]*nabda[1]);
      valarray<type> x0(0.0,2);
-     while (pow(nabda[0],2)+pow(nabda[1],2)>pow(tol,2)&&(x0!=x)[0]&&(x0!=x)[1]&&iterMetodo<5000){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo e numero de iteracoes maximo (5000)
+     while (iterMetodo<5000){ //condicao de parada: iteracoes maximo (5000)
            x0=x;
            if (usarArmijo)
               x+=armijo(x,-nabda)*d; //chamada a busca de Armijo
@@ -77,6 +82,10 @@ valarray<type> newton(valarray<type> x, bool usarArmijo=true, type tol=0.00001){
            d[0]=-(invHessiana[0]*nabda[0]+invHessiana[1]*nabda[1]);
            d[1]=-(invHessiana[2]*nabda[0]+invHessiana[3]*nabda[1]);
            iterMetodo++;
+           if (pow(nabda[0],2)+pow(nabda[1],2)<=pow(tol,2)||((x0==x)[0]&&(x0==x)[1])){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
+               convergiu=true;
+               break;
+           }
      }
      return x;
 }
@@ -85,6 +94,10 @@ int main(){
     type tempX[2]={1,1}; //ponto inicial
     valarray<type> x(tempX,2);
     valarray<type> xOtimo=newton(x); //chamada do metodo (e definicao da busca)
+    if (convergiu)
+       cout<<"Convergencia alcancada!"<<endl;
+    else
+        cout<<"Convergencia NAO alcancada!"<<endl;
     cout<<"iterMetodo = "<<iterMetodo<<endl;
     cout<<"iterBusca = "<<iterMetodo<<endl;
     cout<<"xOtimo = "<<xOtimo[0]<<", "<<xOtimo[1]<<endl; //valor otimo encontrado pelo metodo com a busca utilizada
