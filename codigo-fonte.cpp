@@ -19,14 +19,26 @@ valarray<type> df(valarray<type> x){ //computa vetor gradiente da funcao objetiv
         return ret;
 }
 
+valarray<type> ddf(valarray<type> x){ //retorna hessiana da funcao objetivo no ponto x
+        type arr[4]={2+4*exp(2*x[0])-2*exp(x[0])*x[1],-2*exp(x[0]),-2*exp(x[0]),2}; //xx, xy, yx, yy
+        valarray<type> ret(arr,4);
+        return ret;
+}
+
+valarray<type> inverte(valarray<type> M){ //retorna inversa de M
+        type arr[4]={M[3],-M[1],-M[2],M[0]};
+        valarray<type> ret(arr,4);
+        return ret/(M[0]*M[3]-M[1]*M[2]);
+}
+
 type secaoAurea(valarray<type> x, valarray<type> d){ //busca por secao aurea
      //COMPLETAR
 }
 
-type armijo(valarray<type> x, valarray<type> d, type gama=0.75, type n=0.5){ //busca de Armijo
-       type t=1;
+type armijo(valarray<type> x, valarray<type> d, type gama=0.59, type n=0.4){ //busca de Armijo
+       type t=1.0;
        while (f(x+t*d)>f(x)+n*t*(df(x)*d).sum()){ //outras condicoes de paradas nao sao necessarias pois e globalmente convergente
-             t*=n;
+             t*=gama;
              iterBusca++;
        }
        return t;
@@ -47,10 +59,32 @@ valarray<type> gradiente(valarray<type> x, bool usarArmijo=true, type tol=0.0000
      return x;
 }
 
+valarray<type> newton(valarray<type> x, bool usarArmijo=true, type tol=0.00001){ //metodo de Newton
+     valarray<type> nabda=df(x);
+     valarray<type> invHessiana=inverte(ddf(x));
+     valarray<type> d(0.0,2);
+     d[0]=-(invHessiana[0]*nabda[0]+invHessiana[1]*nabda[1]);
+     d[1]=-(invHessiana[2]*nabda[0]+invHessiana[3]*nabda[1]);
+     valarray<type> x0(0.0,2);
+     while (pow(nabda[0],2)+pow(nabda[1],2)>pow(tol,2)&&(x0!=x)[0]&&(x0!=x)[1]&&iterMetodo<5000){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo e numero de iteracoes maximo (5000)
+           x0=x;
+           if (usarArmijo)
+              x+=armijo(x,-nabda)*d; //chamada a busca de Armijo
+           else
+               x+=secaoAurea(x,-nabda)*d;//chamada a busca por secao aurea
+           nabda=df(x);
+           invHessiana=inverte(ddf(x));
+           d[0]=-(invHessiana[0]*nabda[0]+invHessiana[1]*nabda[1]);
+           d[1]=-(invHessiana[2]*nabda[0]+invHessiana[3]*nabda[1]);
+           iterMetodo++;
+     }
+     return x;
+}
+
 int main(){
     type tempX[2]={1,1}; //ponto inicial
     valarray<type> x(tempX,2);
-    valarray<type> xOtimo=gradiente(x); //chamada do metodo (e definicao da busca)
+    valarray<type> xOtimo=newton(x); //chamada do metodo (e definicao da busca)
     cout<<"iterMetodo = "<<iterMetodo<<endl;
     cout<<"iterBusca = "<<iterMetodo<<endl;
     cout<<"xOtimo = "<<xOtimo[0]<<", "<<xOtimo[1]<<endl; //valor otimo encontrado pelo metodo com a busca utilizada
