@@ -38,7 +38,6 @@ type secaoAurea(valarray<type> x, valarray<type> d, type epsilon=0.001, type ro=
         type a=0, s=ro, b=2*ro;
         while (f(x+b*d)<f(x+s*d)){ //obtencao do invervalo
             a=s; s=b; b*=2;
-            iterBusca++;
         }
         type u=a+teta1*(b-a), v=a+teta2*(b-a);
         while (b-a>epsilon){ //obtencao do tamanho do passo
@@ -81,7 +80,7 @@ valarray<type> gradiente(valarray<type> x, bool usarArmijo=true, type tol=0.0000
      return x;
 }
 
-valarray<type> newton(valarray<type> x, bool usarArmijo=true, type tol=0.00001){ //metodo de Newton
+valarray<type> newton(valarray<type> x, bool puro=false, bool usarArmijo=true, type tol=0.00001){ //metodo de Newton
      valarray<type> nabla=df(x);
      valarray<type> invHessiana=inverte(ddf(x));
      valarray<type> d(0.0,2);
@@ -90,10 +89,13 @@ valarray<type> newton(valarray<type> x, bool usarArmijo=true, type tol=0.00001){
      valarray<type> x0(0.0,2);
      while (iterMetodo<5000){ //condicao de parada: iteracoes maximo (5000)
            x0=x;
-           if (usarArmijo)
-              x+=armijo(x,d)*d; //chamada a busca de Armijo
+           if (puro) //metodo de Newton puro com tk=1
+               x+=d;
            else
-               x+=secaoAurea(x,d)*d;//chamada a busca por secao aurea
+               if (usarArmijo)
+                   x+=armijo(x,d)*d; //chamada a busca de Armijo
+               else
+                   x+=secaoAurea(x,d)*d;//chamada a busca por secao aurea
            nabla=df(x);
            invHessiana=inverte(ddf(x));
            d[0]=-(invHessiana[0]*nabla[0]+invHessiana[1]*nabla[1]);
@@ -110,7 +112,7 @@ valarray<type> newton(valarray<type> x, bool usarArmijo=true, type tol=0.00001){
 int main(){
     type tempX[2]={1,1}; //ponto inicial
     valarray<type> x(tempX,2);
-    valarray<type> xOtimo=newton(x, false); //chamada do metodo (e definicao da busca)
+    valarray<type> xOtimo=newton(x, true, false); //chamada do metodo (e definicao da busca)
     if (convergiu)
        cout<<"Convergencia alcancada!"<<endl;
     else
