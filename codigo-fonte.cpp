@@ -26,7 +26,7 @@ valarray<type> ddf(valarray<type> x){ //retorna hessiana da funcao objetivo no p
         return ret;
 }
 
-valarray<type> inverte(valarray<type> M){ //retorna inversa de M
+valarray<type> inverte(valarray<type> M){ //retorna inversa de M2x2
         type arr[4]={M[3],-M[1],-M[2],M[0]};
         valarray<type> ret(arr,4);
         return ret/(M[0]*M[3]-M[1]*M[2]);
@@ -84,7 +84,7 @@ valarray<type> newton(valarray<type> x, bool puro=false, bool usarArmijo=true, t
      valarray<type> nabla=df(x);
      valarray<type> invHessiana=inverte(ddf(x));
      valarray<type> d(0.0,2);
-     d[0]=-(invHessiana[0]*nabla[0]+invHessiana[1]*nabla[1]);
+     d[0]=-(invHessiana[0]*nabla[0]+invHessiana[1]*nabla[1]); //multiplicacao de matrizes
      d[1]=-(invHessiana[2]*nabla[0]+invHessiana[3]*nabla[1]);
      valarray<type> x0(0.0,2);
      while (iterMetodo<5000){ //condicao de parada: iteracoes maximo (5000)
@@ -98,7 +98,7 @@ valarray<type> newton(valarray<type> x, bool puro=false, bool usarArmijo=true, t
                    x+=secaoAurea(x,d)*d;//chamada a busca por secao aurea
            nabla=df(x);
            invHessiana=inverte(ddf(x));
-           d[0]=-(invHessiana[0]*nabla[0]+invHessiana[1]*nabla[1]);
+           d[0]=-(invHessiana[0]*nabla[0]+invHessiana[1]*nabla[1]); //-hessiana^(-1)grad
            d[1]=-(invHessiana[2]*nabla[0]+invHessiana[3]*nabla[1]);
            iterMetodo++;
            if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||((x0==x)[0]&&(x0==x)[1])){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
@@ -109,10 +109,46 @@ valarray<type> newton(valarray<type> x, bool puro=false, bool usarArmijo=true, t
      return x;
 }
 
+valarray<type> quasenewton(valarray<type> x, bool puro=false, bool usarArmijo=true, type tol=0.00001){ //metodo quase-Newton
+     valarray<type> nabla=df(x);
+     valarray<type> d(0.0,2);
+     valarray<type> h(0.0,4); h[0]=1.0; h[2]=1.0; //define h=I
+     d[0]=-(h[0]*nabla[0]+h[1]*nabla[1]); //multiplicacao de matrizes
+     d[1]=-(h[2]*nabla[0]+h[3]*nabla[1]);
+     valarray<type> p(0.0,4); p[0]=1.0; p[2]=1.0;  //duas diferenca de x entre iteracoes
+     valarray<type> q(0.0,4); q[0]=1.0; q[2]=1.0; //duas difereca de gradientes entre iteracoes
+     valarray<type> x0(0.0,2);
+     while (iterMetodo<5000){ //condicao de parada: iteracoes maximo (5000)
+           x0=x;
+           if (usarArmijo)
+               x+=armijo(x,d)*d; //chamada a busca de Armijo
+           else
+               x+=secaoAurea(x,d)*d;//chamada a busca por secao aurea
+           p[0]=p[2]; p[1]=p[3]; p[2]=x[0]-x0[0]; p[3]=x[1]-x0[1]; //atualiza p
+           q[0]=q[2]; q[1]=q[3]; q[2]=df(x)[0]-nabla[0]; q[3]=df(x)[1]-nabla[1];//atualiza q
+           nabla=df(x);
+           q=inverte(q);
+           h[0]=p[0]*q[0]+p[1]*q[2]; //pq^(-1)
+           h[1]=p[0]*q[1]+p[1]*q[3];
+           h[2]=p[2]*q[0]+p[3]*q[2];
+           h[3]=p[2]*q[1]+p[3]*q[3];
+           d[0]=-(h[0]*nabla[0]+h[1]*nabla[1]); //-hgrad
+           d[1]=-(h[2]*nabla[0]+h[3]*nabla[1]);
+           iterMetodo++;
+           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||((x0[0]==x[0])&&(x0[1]==x[1]))){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
+               convergiu=true;
+               break;
+           }
+     }
+     return x;
+}
+
 int main(){
     type tempX[2]={1,1}; //ponto inicial
     valarray<type> x(tempX,2);
-    valarray<type> xOtimo=newton(x, true, false); //chamada do metodo (e definicao da busca)
+    //valarray<type> xOtimo=gradiente(x, false);
+    //valarray<type> xOtimo=newton(x, false, false);
+    valarray<type> xOtimo=quasenewton(x, false); //chamada do metodo (e definicao da busca)
     if (convergiu)
        cout<<"Convergencia alcancada!"<<endl;
     else
