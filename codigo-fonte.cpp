@@ -72,7 +72,7 @@ valarray<type> gradiente(valarray<type> x, bool usarArmijo=true, type tol=0.0000
                x+=secaoAurea(x,-nabla)*-nabla;//chamada a busca por secao aurea
            nabla=df(x);
            iterMetodo++;
-           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||((x0==x)[0]&&(x0==x)[1])){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
+           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||pow(x0[0]-x[0],2)+pow(x0[1]-x[1],2)<=pow(tol,2)){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
                convergiu=true;
                break;
            }
@@ -101,7 +101,7 @@ valarray<type> newton(valarray<type> x, bool puro=false, bool usarArmijo=true, t
            d[0]=-(invHessiana[0]*nabla[0]+invHessiana[1]*nabla[1]); //-hessiana^(-1)grad
            d[1]=-(invHessiana[2]*nabla[0]+invHessiana[3]*nabla[1]);
            iterMetodo++;
-           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||((x0==x)[0]&&(x0==x)[1])){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
+           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||pow(x0[0]-x[0],2)+pow(x0[1]-x[1],2)<=pow(tol,2)){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
                convergiu=true;
                break;
            }
@@ -135,7 +135,7 @@ valarray<type> quasenewton(valarray<type> x, bool puro=false, bool usarArmijo=tr
            d[0]=-(h[0]*nabla[0]+h[1]*nabla[1]); //-hgrad
            d[1]=-(h[2]*nabla[0]+h[3]*nabla[1]);
            iterMetodo++;
-           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||((x0[0]==x[0])&&(x0[1]==x[1]))){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
+           if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||pow(x0[0]-x[0],2)+pow(x0[1]-x[1],2)<=pow(tol,2)){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
                convergiu=true;
                break;
            }
