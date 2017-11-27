@@ -199,7 +199,7 @@ int main(){
     else
         cout<<"Convergencia NAO alcancada!"<<endl;
     cout<<"iterMetodo = "<<iterMetodo<<endl;
-    cout<<"iterBusca = "<<iterMetodo<<endl;
+    cout<<"iterBusca = "<<iterBusca<<endl;
     cout<<"xOtimo = "<<xOtimo[0]<<", "<<xOtimo[1]<<endl; //valor otimo encontrado pelo metodo com a busca utilizada
     cout<<"fOtimo = "<<f(xOtimo)<<endl; //valor da funcao objetivo no ponto obtido
     valarray<type> gradXOtimo=df(xOtimo);
