@@ -6,7 +6,7 @@ typedef double type; //tipo a ser utilizado ao longo do calculo: relavante para 
 
 using namespace std;
 
-int iterBusca=0; //numero de iteracoes de bsuca (secao aurea ou Armijo)
+int iterBusca=0; //numero de iteracoes de busca (secao aurea ou Armijo)
 int iterMetodo=0; //numero de iteracoes do metodo de minimizacao (gradiente, Newton ou quase-Newton)
 bool convergiu=false; //verdadeiro se metodo foi executado e convergiu dentro do limite de iteracoes
 
@@ -27,20 +27,32 @@ valarray<type> ddf(valarray<type> x){ //retorna hessiana da funcao objetivo no p
 }
 
 valarray<type> multiplica(valarray<type> A, valarray<type> B){ //retorna o produto de A e B 2x2
+        if (A.size()==2){
+            valarray<type> C(0.0,4);
+            C[0]=A[0]*B[0];
+            C[1]=A[0]*B[1];
+            C[2]=A[1]*B[0];
+            C[3]=A[1]*B[1];
+            return C;
+        }
         if (B.size()==2){ //multiplicacao por vetor
             valarray<type> C(0.0,2);
             C[0]=A[0]*B[0]+A[1]*B[1];
             C[1]=A[2]*B[0]+A[3]*B[1];
             return C;
         }
-        else{ //multiplicacao por matriz
-            valarray<type> C(0.0,4);
-            C[0]=A[0]*B[0]+A[1]*B[2];
-            C[1]=A[0]*B[1]+A[1]*B[3];
-            C[2]=A[2]*B[0]+A[3]*B[2];
-            C[3]=A[2]*B[1]+A[3]*B[3];
-            return C;
-        }
+        valarray<type> C(0.0,4); //multiplicacao por matriz
+        C[0]=A[0]*B[0]+A[1]*B[2];
+        C[1]=A[0]*B[1]+A[1]*B[3];
+        C[2]=A[2]*B[0]+A[3]*B[2];
+        C[3]=A[2]*B[1]+A[3]*B[3];
+        return C;
+}
+
+valarray<type> transpoe(valarray<type> M){ //retorna transposta de M2x2
+        type arr[4]={M[0],M[2],M[1],M[3]};
+        valarray<type> ret(arr,4);
+        return ret;
 }
 
 valarray<type> inverte(valarray<type> M){ //retorna inversa de M2x2
@@ -124,7 +136,22 @@ valarray<type> newton(valarray<type> x, bool puro=false, bool usarArmijo=true, t
      return x;
 }
 
-valarray<type> quasenewton(valarray<type> x, bool puro=false, bool usarArmijo=true, type tol=0.00001){ //metodo quase-Newton
+valarray<type> dfp(valarray<type> h, valarray<type> pk, valarray<type> qk){
+    valarray<type> numerador1=multiplica(pk,pk);
+    type denominador1=(pk*qk).sum();
+    valarray<type> numerador2=multiplica(multiplica(h,multiplica(qk,qk)),h);
+    type denominador2=(qk*multiplica(h,qk)).sum();
+    return h+numerador1/denominador1-numerador2/denominador2;
+}
+
+valarray<type> bfgs(valarray<type> h, valarray<type> pk, valarray<type> qk){
+    type denominador=(pk*qk).sum();
+    type numerador1=(qk*multiplica(h,qk)).sum();
+    valarray<type> numerador2=multiplica(pk,pk);
+    return h+(1+numerador1/denominador)*(numerador2/denominador)-(multiplica(multiplica(pk,qk),h)-multiplica(h,multiplica(qk,pk)))/denominador;
+}
+
+valarray<type> quasenewton(valarray<type> x, bool DFP=false, bool BFGS=false, bool usarArmijo=true, type tol=0.00001){ //metodo quase-Newton
      valarray<type> nabla=df(x);
      valarray<type> d(0.0,2);
      valarray<type> h(0.0,4); h[0]=1.0; h[2]=1.0; //define h=I
@@ -140,8 +167,17 @@ valarray<type> quasenewton(valarray<type> x, bool puro=false, bool usarArmijo=tr
                x+=secaoAurea(x,d)*d;//chamada a busca por secao aurea
            p[0]=p[2]; p[1]=p[3]; p[2]=x[0]-x0[0]; p[3]=x[1]-x0[1]; //atualiza p
            q[0]=q[2]; q[1]=q[3]; q[2]=df(x)[0]-nabla[0]; q[3]=df(x)[1]-nabla[1];//atualiza q
+           valarray<type> pk(0.0,2);
+           pk=x-x0;
+           valarray<type> qk(0.0,2);
+           qk=df(x)-nabla;
            nabla=df(x);
-           h=multiplica(p,inverte(q)); //pq^(-1)
+           if (DFP)
+               h=dfp(h,pk,qk);
+           else if (BFGS)
+                   h=bfgs(h,pk,qk);
+               else
+                   h=multiplica(p,inverte(q)); //pq^(-1)
            d=-multiplica(h,nabla); //-hgrad
            iterMetodo++;
            if (pow(nabla[0],2)+pow(nabla[1],2)<=pow(tol,2)||pow(x0[0]-x[0],2)+pow(x0[1]-x[1],2)<=pow(tol,2)){ //condicao de parada: gradiente aprox igual a 0, duas iteracoes com mesmo otimo
@@ -155,9 +191,9 @@ valarray<type> quasenewton(valarray<type> x, bool puro=false, bool usarArmijo=tr
 int main(){
     type tempX[2]={1,1}; //ponto inicial
     valarray<type> x(tempX,2);
-    //valarray<type> xOtimo=gradiente(x, false);
-    //valarray<type> xOtimo=newton(x, false, false);
-    valarray<type> xOtimo=quasenewton(x, false); //chamada do metodo (e definicao da busca)
+    valarray<type> xOtimo=gradiente(x); //chamada do metodo (e definicao da busca)
+    //valarray<type> xOtimo=newton(x);
+    //valarray<type> xOtimo=quasenewton(x);
     if (convergiu)
        cout<<"Convergencia alcancada!"<<endl;
     else
